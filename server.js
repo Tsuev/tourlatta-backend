@@ -36,6 +36,10 @@ app.ws('/send-location', (ws, req) => {
     
 })
 
+app.get('/check-domain', (req, res)=> {
+    return res.status(200).send('<h1>Сервер работает</h1>')
+})
+
 app.listen(5000, ()=> {
     console.log('сервер запущен');  
 })
