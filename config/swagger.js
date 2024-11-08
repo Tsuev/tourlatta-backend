@@ -1,5 +1,8 @@
 // config/swagger.js
 import swaggerJsDoc from 'swagger-jsdoc';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const swaggerOptions = {
   swaggerDefinition: {
@@ -11,7 +14,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:5000/api/v1',
+        url: process.env.DEV ? 'http://localhost:5000/api/v1' : 'https://tourlatta.ru/api/v1',
       },
     ],
     components: {
