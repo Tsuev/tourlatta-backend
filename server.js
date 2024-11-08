@@ -1,11 +1,26 @@
 import express from 'express'
+import cookieParser from 'cookie-parser';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpecs from './config/swagger.js';
+import basicAuth from 'express-basic-auth';
 import ws from 'express-ws';
+import helmet from 'helmet';
+import cors from 'cors'
+import "dotenv/config.js";
+import { connectToDatabase } from './config/database.js';
+
+import guideRoutes from './routes/guideRoutes.js';
 
 const app = express()
 const expressWs = ws(app)
-
 let clients = [];
 
+connectToDatabase()
+
+app.use(helmet())
+app.use(cors())
+app.use(express.json())
+app.use(cookieParser())
 app.ws('/get-locations', (ws, req) => {
     console.log('ПОДКЛЮЧЕНИЕ ДЛЯ ПОЛУЧЕНИЯ ЛОКАЦИЙ УСТАНОВЛЕНО');
 
@@ -36,9 +51,11 @@ app.ws('/send-location', (ws, req) => {
     
 })
 
-app.get('/check-domain', (req, res)=> {
-    return res.status(200).send('<h1>Сервер работает</h1>')
-})
+app.use('/api/v1/api-docs', basicAuth({
+    users: { 'admin': '1234567' }, // Укажите имя пользователя и пароль
+    challenge: true, // Включить стандартное окно запроса логина/пароля
+  }), swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+app.use('/api/v1/guides', guideRoutes);
 
 app.listen(5000, ()=> {
     console.log('сервер запущен');  
