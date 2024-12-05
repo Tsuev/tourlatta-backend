@@ -1,12 +1,13 @@
 // controllers/guideController.js
-import Guide from '../models/Guide.js';
-
-
+import {Guide} from '../models/index.js';
+import crypto from 'crypto'
 
 export const createGuide = async (req, res) => {
   try {
-    const { title, phone, color } = req.body;
-    const newGuide = await Guide.create({ title, phone, color });
+    const { title, phone, color, email } = req.body;
+
+    const password = crypto.randomBytes(8).toString('hex'); // 8 случайных байт
+    const newGuide = await Guide.create({ title, phone, color, email, password });
     res.status(200).json(newGuide);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -42,13 +43,14 @@ export const getGuideById = async (req, res) => {
 export const updateGuide = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, phone, color } = req.body;
+    const { title, phone, color, email } = req.body;
     const guide = await Guide.findByPk(id);
 
     if (guide) {
       guide.title = title;
       guide.phone = phone;
       guide.color = color;
+      guide.email = email;
       await guide.save();
       res.status(200).json(guide);
     } else {

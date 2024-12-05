@@ -16,6 +16,19 @@ const Guide = sequelize.define('Guide', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  role: {
+    type: DataTypes.STRING,
+    defaultValue: "GUIDE"
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
+  },
   color: {
     type: DataTypes.STRING,
     allowNull: false
@@ -24,5 +37,6 @@ const Guide = sequelize.define('Guide', {
   tableName: 'guides',
   timestamps: true,
 });
+
 
 export default Guide;

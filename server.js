@@ -10,6 +10,9 @@ import "dotenv/config.js";
 import { connectToDatabase } from './config/database.js';
 
 import guideRoutes from './routes/guideRoutes.js';
+import routeRoutes from './routes/routeRoutes.js';
+import systemRoutes from './routes/systemRoutes.js';
+import authRoutes from './routes/authRoutes.js'
 
 const app = express()
 const expressWs = ws(app)
@@ -56,6 +59,9 @@ app.use('/api/v1/api-docs', basicAuth({
     challenge: true, // Включить стандартное окно запроса логина/пароля
   }), swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 app.use('/api/v1/guides', guideRoutes);
+app.use('/api/v1/routes', routeRoutes);
+app.use('/api/v1/admin', systemRoutes);
+app.use('/api/v1/auth', authRoutes);
 
 app.listen(5000, ()=> {
     console.log('сервер запущен');  
