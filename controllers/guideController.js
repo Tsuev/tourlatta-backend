@@ -1,5 +1,5 @@
 // controllers/guideController.js
-import {Guide} from '../models/index.js';
+import {Guide, Route} from '../models/index.js';
 import crypto from 'crypto'
 
 export const createGuide = async (req, res) => {
@@ -8,6 +8,7 @@ export const createGuide = async (req, res) => {
 
     const password = crypto.randomBytes(8).toString('hex'); // 8 случайных байт
     const newGuide = await Guide.create({ title, phone, color, email, password });
+
     res.status(200).json(newGuide);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -17,7 +18,14 @@ export const createGuide = async (req, res) => {
 // Получить всех гидов
 export const getAllGuides = async (req, res) => {
   try {
-    const guides = await Guide.findAll();
+    const guides = await Guide.findAll({include: [
+      {
+        model: Route,
+        as: 'routes',
+        attributes: { exclude: ['guide_route'] }, // Убираем guide_route из выдачи
+        through: { attributes: [] }, // Убираем поля из промежуточной таблицы guide_route
+      },
+    ]});
     res.status(200).json(guides);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -28,7 +36,14 @@ export const getAllGuides = async (req, res) => {
 export const getGuideById = async (req, res) => {
   try {
     const { id } = req.params;
-    const guide = await Guide.findByPk(id);
+    const guide = await Guide.findByPk(id, {include: [
+      {
+        model: Route,
+        as: 'routes',
+        attributes: { exclude: ['guide_route'] }, // Убираем guide_route из выдачи
+        through: { attributes: [] }, // Убираем поля из промежуточной таблицы guide_route
+      },
+    ]});
     if (guide) {
       res.status(200).json(guide);
     } else {

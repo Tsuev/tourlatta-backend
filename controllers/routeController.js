@@ -7,8 +7,10 @@ import {Route, Guide} from '../models/index.js';
  */
 export const createRoute = async (req, res) => {
   try {
-    const { title, description, path } = req.body;
+    const { title, description, path, guideId } = req.body;
+
     const newRoute = await Route.create({ title, description, path });
+    newRoute.addGuides(guideId);
     res.status(200).json(newRoute);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -25,6 +27,9 @@ export const getAllRoutes = async (req, res) => {
     const routes = await Route.findAll( {include: [
         {
           model: Guide,
+          as: 'guides',
+          attributes: { exclude: ['guide_route'] }, // Убираем guide_route из выдачи
+          through: { attributes: [] }, // Убираем поля из промежуточной таблицы guide_route
         },
       ]});
     res.status(200).json(routes);
