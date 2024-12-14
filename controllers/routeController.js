@@ -10,7 +10,9 @@ export const createRoute = async (req, res) => {
     const { title, description, path, guideId } = req.body;
 
     const newRoute = await Route.create({ title, description, path });
-    newRoute.addGuides(guideId);
+    if(guideId) {
+      newRoute.addGuides(guideId);
+    }
     res.status(200).json(newRoute);
   } catch (error) {
     res.status(500).json({ error: error.message });

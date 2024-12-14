@@ -4,11 +4,13 @@ import crypto from 'crypto'
 
 export const createGuide = async (req, res) => {
   try {
-    const { title, phone, color, email } = req.body;
+    const { title, phone, color, email, routeId } = req.body;
 
     const password = crypto.randomBytes(8).toString('hex'); // 8 случайных байт
     const newGuide = await Guide.create({ title, phone, color, email, password });
-
+    if(routeId) {
+      newGuide.addRoutes(routeId);
+    }
     res.status(200).json(newGuide);
   } catch (error) {
     res.status(500).json({ error: error.message });
