@@ -120,11 +120,11 @@ export const deleteGuideFromRoute = async (req, res) => {
 
    const route = await Route.findByPk(routeId);
       if (!route) {
-        return res.status(400).json({ message: 'Маршрут не найден' });
+        return res.status(400).json({ error: 'Маршрут не найден' });
       }
       const guide = await Guide.findByPk(guideId);
       if (!guide) {
-        return res.status(400).json({ message: 'Гид не найден' });
+        return res.status(400).json({ error: 'Гид не найден' });
       }
       await route.removeGuide(guide);
       return res.status(200).json({ message: 'Гид успешно удален из маршрута' });
@@ -139,11 +139,11 @@ export const addGuideFromRoute = async (req, res) => {
    
    const route = await Route.findByPk(routeId);
       if (!route) {
-        return res.status(400).json({ message: 'Маршрут не найден' });
+        return res.status(400).json({ error: 'Маршрут не найден' });
       }
       const guide = await Guide.findByPk(guideId);
       if (!guide) {
-        return res.status(400).json({ message: 'Гид не найден' });
+        return res.status(400).json({ error: 'Гид не найден' });
       }
       await route.addGuides(guideId);
       return res.status(200).json({ message: 'Гид успешно добавлен к маршруту' });
