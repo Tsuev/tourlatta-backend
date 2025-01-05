@@ -10,10 +10,16 @@ export const createRoute = async (req, res) => {
     const { title, description, path, guideId } = req.body;
 
     const newRoute = await Route.create({ title, description, path });
+    
     if(guideId) {
-      newRoute.addGuides(guideId);
+      const guide = await Guide.findByPk(guideId);
+      if(guide) {
+        newRoute.addGuides(guideId);
+      } else {
+        return res.status(400).json({ error: 'Гида которого вы хотите добавить не существует' });
+      }
     }
-    res.status(200).json(newRoute);
+    return res.status(200).json(newRoute);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -52,7 +58,7 @@ export const getRouteById = async (req, res) => {
     if (route) {
       res.status(200).json(route);
     } else {
-      res.status(404).json({ error: 'Маршрут не найден' });
+      res.status(400).json({ error: 'Маршрут не найден' });
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -70,6 +76,7 @@ export const updateRoute = async (req, res) => {
     const { title, description, path } = req.body;
 
     const route = await Route.findByPk(id);
+    
     if (route) {
       route.title = title || route.title;
       route.description = description || route.description;
@@ -78,7 +85,7 @@ export const updateRoute = async (req, res) => {
       await route.save();
       res.status(200).json(route);
     } else {
-      res.status(404).json({ error: 'Маршрут не найден' });
+      res.status(400).json({ error: 'Маршрут не найден' });
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -96,11 +103,51 @@ export const deleteRoute = async (req, res) => {
     const route = await Route.findByPk(id);
     if (route) {
       await route.destroy();
-      res.status(200).end();
+      res.status(200).json({
+        message: 'Маршрут удален',
+      });
     } else {
-      res.status(404).json({ error: 'Маршрут не найден' });
+      res.status(400).json({ error: 'Маршрут не найден' });
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+};
+
+export const deleteGuideFromRoute = async (req, res) => {
+ try {
+   const { routeId, guideId } = req.body;
+
+   const route = await Route.findByPk(routeId);
+      if (!route) {
+        return res.status(400).json({ message: 'Маршрут не найден' });
+      }
+      const guide = await Guide.findByPk(guideId);
+      if (!guide) {
+        return res.status(400).json({ message: 'Гид не найден' });
+      }
+      await route.removeGuide(guide);
+      return res.status(200).json({ message: 'Гид успешно удален из маршрута' });
+ } catch (error) {
+   res.status(500).json({ error: error.message });
+ }
+};
+
+export const addGuideFromRoute = async (req, res) => {
+ try {
+   const { routeId, guideId } = req.body;
+   
+   const route = await Route.findByPk(routeId);
+      if (!route) {
+        return res.status(400).json({ message: 'Маршрут не найден' });
+      }
+      const guide = await Guide.findByPk(guideId);
+      if (!guide) {
+        return res.status(400).json({ message: 'Гид не найден' });
+      }
+      await route.addGuides(guideId);
+      return res.status(200).json({ message: 'Гид успешно добавлен к маршруту' });
+ } catch (error) {
+   res.status(500).json({ error: error.message });
+ }
 };
