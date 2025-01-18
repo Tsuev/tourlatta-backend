@@ -3,7 +3,10 @@ import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpecs from './config/swagger.js';
 import basicAuth from 'express-basic-auth';
-import ws from 'express-ws';
+import { Server } from 'socket.io';
+import http from "http"
+
+
 import helmet from 'helmet';
 import cors from 'cors'
 import "dotenv/config.js";
@@ -15,7 +18,7 @@ import systemRoutes from './routes/systemRoutes.js';
 import authRoutes from './routes/authRoutes.js'
 
 const app = express()
-const expressWs = ws(app)
+// const expressWs = ws(app)
 let clients = [];
 
 connectToDatabase()
@@ -24,35 +27,8 @@ app.use(helmet())
 app.use(cors())
 app.use(express.json())
 app.use(cookieParser())
-app.ws('/get-locations', (ws, req) => {
-    console.log('ПОДКЛЮЧЕНИЕ ДЛЯ ПОЛУЧЕНИЯ ЛОКАЦИЙ УСТАНОВЛЕНО');
 
-
-    clients.push(ws);
-    
-    ws.on('close', () => {
-        clients = clients.filter(client => client !== ws);
-        console.log('Соединение для получения локаций закрыто');
-    });
-})
-
-app.ws('/send-location', (ws, req) => {
-    console.log('ПОДКЛЮЧЕНИЕ ДЛЯ ОТПРАВКИ ЛОКАЦИИ УСТАНОВЛЕНО');
-
-    ws.on('message', (data) => {
-        console.log('Получена локация:', data);
-        clients.forEach(client => {
-            if (client.readyState === 1) { // Проверяем, что клиент все еще подключен
-                client.send(data);
-            }
-        });
-    });
-
-    ws.on('close', () => {
-        console.log('Соединение для отправки локации закрыто');
-    });
-    
-})
+const users = [];
 
 app.use('/api/v1/api-docs', basicAuth({
     users: { 'admin': '1234567' }, // Укажите имя пользователя и пароль
@@ -62,6 +38,39 @@ app.use('/api/v1/guides', guideRoutes);
 app.use('/api/v1/routes', routeRoutes);
 app.use('/api/v1/admin', systemRoutes);
 app.use('/api/v1/auth', authRoutes);
+
+const server = http.createServer(app);
+const io = new Server(server);
+
+io.on('connection', (socket) => {
+    console.log('Новое соединение:', socket.id);
+  
+    // Авторизация
+    socket.on('authenticate', ({ userId, adminId }) => {
+      users[userId] = { socketId: socket.id, adminId };
+      console.log(`Пользователь ${userId} связан с администратором ${adminId}`);
+    });
+  
+    // Прием геоданных от гида
+    socket.on('send-location', ({ userId, location }) => {
+    //   const admin = Object.values(users).find((user) => user.userId === users[userId].adminId);
+      console.log(userId, location)
+    //   if (admin) {
+    //     io.to(admin.socketId).emit('receive-location', { userId, location });
+    //   }
+    });
+  
+    // Обработчик отключения
+    socket.on('disconnect', () => {
+      for (const userId in users) {
+        if (users[userId].socketId === socket.id) {
+          console.log(`Пользователь ${userId} отключен`);
+          delete users[userId];
+          break;
+        }
+      }
+    });
+  });
 
 app.listen(5000, ()=> {
     console.log('сервер запущен');  
