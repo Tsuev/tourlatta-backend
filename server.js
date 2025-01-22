@@ -42,7 +42,7 @@ app.use('/api/v1/auth', authRoutes);
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*', // Для разработки. Настройте для продакшена.
+    origin: ['http://localhost:3000', 'https://tourlatta.ru'], // Для разработки. Настройте для продакшена.
     methods: ['GET', 'POST'],
   }
 });
