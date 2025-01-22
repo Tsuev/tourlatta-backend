@@ -44,8 +44,7 @@ const io = new Server(server, {
   cors: {
     origin: '*', // Для разработки. Настройте для продакшена.
     methods: ['GET', 'POST'],
-  },
-  path: '/my-socket'
+  }
 });
 
 io.on('connection', (socket) => {
