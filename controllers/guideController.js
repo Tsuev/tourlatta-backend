@@ -64,10 +64,11 @@ export const updateGuide = async (req, res) => {
     const guide = await Guide.findByPk(id);
 
     if (guide) {
-      guide.title = title;
-      guide.phone = phone;
-      guide.color = color;
-      guide.email = email;
+      guide.title = title || guide.title;
+      guide.phone = phone || guide.phone;
+      guide.color = color || guide.color;
+      guide.email = email || guide.email;
+
       await guide.save();
       res.status(200).json(guide);
     } else {

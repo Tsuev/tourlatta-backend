@@ -180,7 +180,7 @@ router.get('/get-by-id/:id', getGuideById);
  *       500:
  *         description: Ошибка сервера
  */
-router.put('/update/:id', updateGuide);
+router.post('/update/:id', updateGuide);
 /**
  * @swagger
  * /guides/delete/{id}:
