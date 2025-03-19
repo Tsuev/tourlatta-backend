@@ -1,15 +1,10 @@
 import {Route, Guide} from '../models/index.js';
 
-/**
- * Создать новый маршрут
- * @param {Object} req - объект запроса
- * @param {Object} res - объект ответа
- */
 export const createRoute = async (req, res) => {
   try {
     const { title, description, path, guideId } = req.body;
 
-    const newRoute = await Route.create({ title, description, path });
+    const newRoute = await Route.create({ title, description, path, adminId: req.user.id });
     
     if(guideId) {
       const guide = await Guide.findByPk(guideId);
@@ -25,14 +20,11 @@ export const createRoute = async (req, res) => {
   }
 };
 
-/**
- * Получить все маршруты
- * @param {Object} req - объект запроса
- * @param {Object} res - объект ответа
- */
 export const getAllRoutes = async (req, res) => {
   try {
-    const routes = await Route.findAll( {include: [
+    const routes = await Route.findAll( {
+      where: { adminId: req.user.id },
+      include: [
         {
           model: Guide,
           as: 'guides',
@@ -46,11 +38,6 @@ export const getAllRoutes = async (req, res) => {
   }
 };
 
-/**
- * Получить маршрут по ID
- * @param {Object} req - объект запроса
- * @param {Object} res - объект ответа
- */
 export const getRouteById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -65,11 +52,6 @@ export const getRouteById = async (req, res) => {
   }
 };
 
-/**
- * Обновить маршрут по ID
- * @param {Object} req - объект запроса
- * @param {Object} res - объект ответа
- */
 export const updateRoute = async (req, res) => {
   try {
     const { id } = req.params;
@@ -92,11 +74,6 @@ export const updateRoute = async (req, res) => {
   }
 };
 
-/**
- * Удалить маршрут по ID
- * @param {Object} req - объект запроса
- * @param {Object} res - объект ответа
- */
 export const deleteRoute = async (req, res) => {
   try {
     const { id } = req.params;

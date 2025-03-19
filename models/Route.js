@@ -12,6 +12,10 @@ const Route = sequelize.define('Route', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  adminId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
   description: {
     type: DataTypes.TEXT,
     allowNull: false,

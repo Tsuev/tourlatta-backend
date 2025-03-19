@@ -6,8 +6,12 @@ export const createGuide = async (req, res) => {
   try {
     const { title, phone, color, email, routeId } = req.body;
 
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Доступ запрещен' });
+    }
+
     const password = crypto.randomBytes(8).toString('hex'); // 8 случайных байт
-    const newGuide = await Guide.create({ title, phone, color, email, password });
+    const newGuide = await Guide.create({ title, phone, color, email, password, adminId: req.user.id });
     if(routeId) {
       newGuide.addRoutes(routeId);
     }
@@ -20,7 +24,9 @@ export const createGuide = async (req, res) => {
 // Получить всех гидов
 export const getAllGuides = async (req, res) => {
   try {
-    const guides = await Guide.findAll({include: [
+    const guides = await Guide.findAll({
+      where: { adminId: req.user.id }, 
+      include: [
       {
         model: Route,
         as: 'routes',
@@ -38,7 +44,8 @@ export const getAllGuides = async (req, res) => {
 export const getGuideById = async (req, res) => {
   try {
     const { id } = req.params;
-    const guide = await Guide.findByPk(id, {include: [
+    const guide = await Guide.findByPk(id, {
+      include: [
       {
         model: Route,
         as: 'routes',

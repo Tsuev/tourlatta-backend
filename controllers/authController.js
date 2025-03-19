@@ -22,9 +22,11 @@ export const login = async (req, res) => {
 
         if (!isMatch) return res.status(401).json({ error: 'Неверный логин или пароль' });
     
-        const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-          expiresIn: '24h',
-        });
+        const token = jwt.sign(
+          { id: user.id, email: user.email, role: user.role }, 
+          process.env.JWT_SECRET, 
+          { expiresIn: '24h' }
+      );
     
         res.status(200).json({ token, userInfo: user });
       } catch (error) {

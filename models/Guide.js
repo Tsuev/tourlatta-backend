@@ -15,7 +15,6 @@ const Guide = sequelize.define('Guide', {
   adminId: {
     type: DataTypes.INTEGER,
     allowNull: true,
-    unique: true,
   },
   phone: {
     type: DataTypes.STRING,

@@ -17,6 +17,8 @@ import routeRoutes from './routes/routeRoutes.js';
 import systemRoutes from './routes/systemRoutes.js';
 import authRoutes from './routes/authRoutes.js'
 
+import {Guide} from './models/index.js';
+
 const app = express()
 // const expressWs = ws(app)
 let clients = [];
@@ -47,30 +49,47 @@ const io = new Server(server, {
   }
 });
 
+const adminSockets = {}; // { adminId: socketId }
 io.on('connection', (socket) => {
   console.log('Новое соединение:', socket.id);
 
-  // Авторизация
-  socket.on('authenticate', ({ userId, adminId }) => {
-    users[userId] = { socketId: socket.id, adminId };
-    console.log(`Пользователь ${userId} связан с администратором ${adminId}`);
+  // Прием данных от гида
+  socket.on('send-location', async ({ userId, location }) => {
+    try {
+      // Ищем гида по userId, чтобы узнать его adminId
+      const guide = await Guide.findByPk(userId);
+      if (!guide) {
+        console.log('Гид не найден');
+        return;
+      }
+
+      const adminId = guide.adminId;
+
+      if (adminId && adminSockets[adminId]) {
+        // Если админ есть и у него есть сокет, отправляем данные
+        io.to(adminSockets[adminId]).emit('receive-location', { userId, location });
+        console.log(`Отправка данных администратору с ID ${adminId}`);
+      } else {
+        console.log('Админ не подключен');
+      }
+    } catch (error) {
+      console.error('Ошибка при отправке данных:', error);
+    }
   });
 
-  // Прием геоданных от гида
-  socket.on('send-location', ({ userId, location }) => {
-    //   const admin = Object.values(users).find((user) => user.userId === users[userId].adminId);
-    console.log(userId, location)
-    //   if (admin) {
-    //     io.to(admin.socketId).emit('receive-location', { userId, location });
-    //   }
+  // Сохранение сокет-соединения админа
+  socket.on('admin-connect', (adminId) => {
+    adminSockets[adminId] = socket.id;
+    console.log(`Админ с ID ${adminId} подключился`);
   });
 
-  // Обработчик отключения
+  // Отключение админа
   socket.on('disconnect', () => {
-    for (const userId in users) {
-      if (users[userId].socketId === socket.id) {
-        console.log(`Пользователь ${userId} отключен`);
-        delete users[userId];
+    // Удаляем сокет-соединение админа, когда он отключается
+    for (let adminId in adminSockets) {
+      if (adminSockets[adminId] === socket.id) {
+        delete adminSockets[adminId];
+        console.log(`Админ с ID ${adminId} отключился`);
         break;
       }
     }
