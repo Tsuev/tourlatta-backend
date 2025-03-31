@@ -19,4 +19,5 @@ router.get('/get-by-id/:id', authenticate, authorize(['ADMIN']), getGuideById);
 router.post('/update/:id', authenticate, authorize(['ADMIN']), updateGuide);
 router.delete('/delete/:id',authenticate, authorize(['ADMIN']), deleteGuide);
 
+
 export default router;

@@ -51,7 +51,31 @@ export const getRouteById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+export const getRouteByGuideId = async (req, res) => {
+  try {
+    const { guideId } = req.params;
+    console.log(guideId)
+    console.log(req.params)
+    const routes = await Route.findAll({
+      include: [
+        {
+          model: Guide,
+          as: 'guides',
+          where: { id: guideId }, // Фильтрация маршрутов, в которых есть указанный гид
+          through: { attributes: [] }, // Исключает данные из промежуточной таблицы
+        },
+      ],
+    });
 
+    if (routes) {
+      res.status(200).json(routes);
+    } else {
+      res.status(400).json({ error: 'Маршруты не найден' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 export const updateRoute = async (req, res) => {
   try {
     const { id } = req.params;

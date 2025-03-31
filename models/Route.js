@@ -20,6 +20,10 @@ const Route = sequelize.define('Route', {
     type: DataTypes.TEXT,
     allowNull: false,
   },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
   path: {
     type: DataTypes.JSONB,
     allowNull: false
