@@ -53,9 +53,8 @@ export const getRouteById = async (req, res) => {
 };
 export const getRouteByGuideId = async (req, res) => {
   try {
-    const { guideId } = req.params;
-    console.log(guideId)
-    console.log(req.params)
+    const guideId  = req.user.id;
+
     const routes = await Route.findAll({
       include: [
         {
@@ -134,26 +133,33 @@ export const deleteGuideFromRoute = async (req, res) => {
  }
 };
 
-export const addGuidesToRoute = async (req, res) => {
+export const updateGuidesInRoute = async (req, res) => {
   try {
     const { routeId, guideIds } = req.body;
-    
-    if (!Array.isArray(guideIds) || guideIds.length === 0) {
-      return res.status(400).json({ error: 'Передайте массив id гидов' });
-    }
-    
+
     const route = await Route.findByPk(routeId);
     if (!route) {
       return res.status(400).json({ error: 'Маршрут не найден' });
     }
-    
-    const guides = await Guide.findAll({ where: { id: guideIds } });
-    if (guides.length !== guideIds.length) {
-      return res.status(400).json({ error: 'Один или несколько гидов не найдены' });
+
+    if (!Array.isArray(guideIds) || guideIds.length === 0) {
+      await route.setGuides([]); // Убираем всех гидов
+      return res.status(200).json({ message: 'Все гиды удалены из маршрута' });
     }
-    
-    await route.addGuides(guides);
-    return res.status(200).json({ message: 'Гиды успешно добавлены к маршруту' });
+
+    const guides = await Guide.findAll({ where: { id: guideIds } });
+
+    const foundGuideIds = guides.map(g => g.id);
+    const missingGuideIds = guideIds.filter(id => !foundGuideIds.includes(id));
+
+    if (missingGuideIds.length > 0) {
+      return res.status(400).json({ error: `Некоторые гиды не найдены: ${missingGuideIds.join(', ')}` });
+    }
+
+    // Устанавливаем новых гидов (заменяем существующих)
+    await route.setGuides(guides);
+
+    return res.status(200).json({ message: 'Гиды успешно обновлены' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
