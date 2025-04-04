@@ -22,6 +22,6 @@ router.post('/delete/:id', authenticate, authorize(['ADMIN']), deleteRoute);
 router.post('/update-guides', authenticate, authorize(['ADMIN']), updateGuidesInRoute);
 router.post('/delete-guide', authenticate, authorize(['ADMIN']), deleteGuideFromRoute);
 
-router.get('/get-by-guide/:guideId', authenticate, getRouteByGuideId);
+router.get('/get-by-guide', authenticate, getRouteByGuideId);
 
 export default router;
