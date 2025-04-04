@@ -17,7 +17,7 @@ import routeRoutes from './routes/routeRoutes.js';
 import systemRoutes from './routes/systemRoutes.js';
 import authRoutes from './routes/authRoutes.js'
 
-import {Guide} from './models/index.js';
+import {Guide, Admin} from './models/index.js';
 
 const app = express()
 // const expressWs = ws(app)
@@ -50,13 +50,18 @@ const io = new Server(server, {
 });
 
 const adminSockets = {}; // { adminId: socketId }
+const adminLocations = {}; // { adminId: { userId: location } }
+const adminIntervals = {}; // { adminId: intervalId }
+
+// Интервал отправки данных админам (например, каждые 5 секунд)
+const SEND_INTERVAL = 5000; 
+
 io.on('connection', (socket) => {
   console.log('Новое соединение:', socket.id);
 
-  // Прием данных от гида
+  // Обработчик для гидов
   socket.on('send-location', async ({ userId, location }) => {
     try {
-      // Ищем гида по userId, чтобы узнать его adminId
       const guide = await Guide.findByPk(userId);
       if (!guide) {
         console.log('Гид не найден');
@@ -64,32 +69,68 @@ io.on('connection', (socket) => {
       }
 
       const adminId = guide.adminId;
-
-      if (adminId && adminSockets[adminId]) {
-        // Если админ есть и у него есть сокет, отправляем данные
-        io.to(adminSockets[adminId]).emit('receive-location', { userId, location });
-        console.log(`Отправка данных администратору с ID ${adminId}`);
-      } else {
-        console.log('Админ не подключен');
+      if (!adminId) {
+        console.log('У гида нет администратора');
+        return;
       }
+
+      // Сохраняем локацию для соответствующего админа
+      if (!adminLocations[adminId]) {
+        adminLocations[adminId] = {};
+      }
+      adminLocations[adminId][userId] = location;
+
     } catch (error) {
-      console.error('Ошибка при отправке данных:', error);
+      console.error('Ошибка при обработке локации:', error);
     }
   });
 
-  // Сохранение сокет-соединения админа
-  socket.on('admin-connect', (adminId) => {
-    adminSockets[adminId] = socket.id;
-    console.log(`Админ с ID ${adminId} подключился`);
+  // Обработчик подключения админа
+  socket.on('admin-connect', async (adminId) => {
+    try {
+      // Проверяем существование админа в БД
+      const admin = await Admin.findByPk(adminId);
+      if (!admin) {
+        console.log('Администратор не найден');
+        return;
+      }
+
+      // Сохраняем сокет
+      adminSockets[adminId] = socket.id;
+      
+      // Инициализируем хранилище локаций
+      adminLocations[adminId] = adminLocations[adminId] || {};
+
+      // Запускаем интервал отправки данных для этого админа
+      if (!adminIntervals[adminId]) {
+        adminIntervals[adminId] = setInterval(() => {
+          if (adminSockets[adminId] && adminLocations[adminId]) {
+            // Отправляем все накопленные локации
+            io.to(adminSockets[adminId]).emit('receive-locations', adminLocations[adminId]);
+            
+            // Очищаем накопленные данные после отправки
+            adminLocations[adminId] = {};
+          }
+        }, SEND_INTERVAL);
+      }
+
+      console.log(`Админ ${adminId} подключен`);
+    } catch (error) {
+      console.error('Ошибка при подключении админа:', error);
+    }
   });
 
-  // Отключение админа
+  // Обработчик отключения
   socket.on('disconnect', () => {
-    // Удаляем сокет-соединение админа, когда он отключается
-    for (let adminId in adminSockets) {
+    // Удаляем админа при отключении
+    for (const adminId in adminSockets) {
       if (adminSockets[adminId] === socket.id) {
+        // Очищаем связанные ресурсы
+        clearInterval(adminIntervals[adminId]);
+        delete adminIntervals[adminId];
         delete adminSockets[adminId];
-        console.log(`Админ с ID ${adminId} отключился`);
+        delete adminLocations[adminId];
+        console.log(`Админ ${adminId} отключен`);
         break;
       }
     }
@@ -99,3 +140,4 @@ io.on('connection', (socket) => {
 server.listen(5000, () => {
   console.log('сервер запущен');
 })
+
