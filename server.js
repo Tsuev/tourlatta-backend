@@ -88,32 +88,31 @@ io.on('connection', (socket) => {
   // Обработчик подключения админа
   socket.on('admin-connect', async (adminId) => {
     try {
-      // Проверяем существование админа в БД
       const admin = await Admin.findByPk(adminId);
       if (!admin) {
         console.log('Администратор не найден');
         return;
       }
-
-      // Сохраняем сокет
+  
       adminSockets[adminId] = socket.id;
-      
-      // Инициализируем хранилище локаций
       adminLocations[adminId] = adminLocations[adminId] || {};
-
-      // Запускаем интервал отправки данных для этого админа
+  
       if (!adminIntervals[adminId]) {
         adminIntervals[adminId] = setInterval(() => {
           if (adminSockets[adminId] && adminLocations[adminId]) {
-            // Отправляем все накопленные локации
-            io.to(adminSockets[adminId]).emit('receive-locations', adminLocations[adminId]);
-            
-            // Очищаем накопленные данные после отправки
+            // Преобразование в массив объектов с guideId
+            const locationsArray = Object.entries(adminLocations[adminId])
+              .map(([userId, loc]) => ({
+                guideId: userId,
+                ...loc
+              }));
+  
+            io.to(adminSockets[adminId]).emit('receive-locations', locationsArray);
             adminLocations[adminId] = {};
           }
         }, SEND_INTERVAL);
       }
-
+  
       console.log(`Админ ${adminId} подключен`);
     } catch (error) {
       console.error('Ошибка при подключении админа:', error);
